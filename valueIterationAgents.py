@@ -60,21 +60,22 @@ class ValueIterationAgent(ValueEstimationAgent):
           value function stored in self.values.
         """
         "*** YOUR CODE HERE ***"
-	#
+        #
         # Retrieve all states (with the probabilities) that we can end up in after taking tha action
         states_probs = self.mdp.getTransitionStatesAndProbs(state, action)
-	#
+        #
         temp = 0
         for s,p in states_probs:
             temp += p*self.values[state]
-	#
+        #
         # We multiply for the discount
         temp = temp*self.discount
         reward = self.mdp.getReward(state, action, states_probs[0][0])
-	# This is the first version of the solution
-	# The reward for the first state we might end up in after taking the given action is considered
+
+        # This is the first version of the solution
+        # The reward for the first state we might end up in after taking the given action is considered
         return temp + reward
-	#
+        #
         # util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
@@ -87,17 +88,17 @@ class ValueIterationAgent(ValueEstimationAgent):
           terminal state, you should return None.
         """
         "*** YOUR CODE HERE ***"
-	#
-	# initial implementation
-	#
-	if (self.mdp.isTerminal(state)):
-		return None
-	possibleActionsList = self.mdp.getPossibleActions(state)
-	for a in possibleActionsList:
-		self.values[a] = self.computeQValueFromValues(state,a)
-	self.values.sortedKeys()
-	return self.values.argMax()
-	#
+        #
+        #  initial implementation
+        #
+        if (self.mdp.isTerminal(state)):
+            return None
+        possibleActionsList = self.mdp.getPossibleActions(state)
+        for a in possibleActionsList:
+            self.values[a] = self.computeQValueFromValues(state,a)
+        self.values.sortedKeys()
+        return self.values.argMax()
+        #
         #util.raiseNotDefined()
 
     def getPolicy(self, state):
