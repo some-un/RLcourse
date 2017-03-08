@@ -70,7 +70,7 @@ class ValueIterationAgent(ValueEstimationAgent):
 	#
         # We multiply for the discount
         temp = temp*self.discount
-        reward = self.mdp.getReward(state, action, states_probs[0][0])
+        reward = mdp.getReward(state, action, states_probs[0][0])
 	# This is the first version of the solution
 	# The reward for the first state we might end up in after taking the given action is considered
         return temp + reward
