@@ -4,7 +4,7 @@
 # educational purposes provided that (1) you do not distribute or publish
 # solutions, (2) you retain this notice, and (3) you provide clear
 # attribution to UC Berkeley, including a link to http://ai.berkeley.edu.
-# 
+#
 # Attribution Information: The Pacman AI projects were developed at UC Berkeley.
 # The core projects and autograders were primarily created by John DeNero
 # (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
@@ -47,6 +47,7 @@ class ValueIterationAgent(ValueEstimationAgent):
         "*** YOUR CODE HERE ***"
 
 
+
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
@@ -62,21 +63,43 @@ class ValueIterationAgent(ValueEstimationAgent):
         "*** YOUR CODE HERE ***"
         #
         # Retrieve all states (with the probabilities) that we can end up in after taking tha action
-        states_probs = self.mdp.getTransitionStatesAndProbs(state, action)
+        state_prob_pairs = self.mdp.getTransitionStatesAndProbs(state, action)
         #
-        temp = 0
-        for s,p in states_probs:
-            temp += p*self.values[state]
-        #
-        # We multiply for the discount
-        temp = temp*self.discount
-        reward = self.mdp.getReward(state, action, states_probs[0][0])
 
-        # This is the first version of the solution
-        # The reward for the first state we might end up in after taking the given action is considered
-        return temp + reward
+        sum_states_prob = 0
+        sum_rewards = 0
+        for state_prob_pair in state_prob_pairs:
+            s = state_prob_pair[0]
+            p = state_prob_pair[1]
+
+            if self.getValue(s) is not None:
+
+                value_s = self.getValue(s)
+
+                sum_states_prob += (p * value_s)
+                immediate_reward = self.mdp.getReward(state, action, s)
+                sum_rewards += p * immediate_reward
+
+        discounted_sum = sum_states_prob * self.discount
+
+        final_value = sum_rewards + discounted_sum
+
+        return final_value
+
+
+        # temp = 0
+        # for s,p in states_probs:
+        #     temp += p*self.values[state]
+        # #
+        # # We multiply for the discount
+        # temp = temp*self.discount
+        # reward = self.mdp.getReward(state, action, states_probs[0][0])
         #
-        # util.raiseNotDefined()
+        # # This is the first version of the solution
+        # # The reward for the first state we might end up in after taking the given action is considered
+        # return temp + reward
+        # #
+        # # util.raiseNotDefined()
 
     def computeActionFromValues(self, state):
         """
@@ -96,10 +119,11 @@ class ValueIterationAgent(ValueEstimationAgent):
         possibleActionsList = self.mdp.getPossibleActions(state)
         for a in possibleActionsList:
             self.values[a] = self.computeQValueFromValues(state,a)
+
         self.values.sortedKeys()
+        bestaction = self.values.argMax()
         return self.values.argMax()
-        #
-        #util.raiseNotDefined()
+
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
