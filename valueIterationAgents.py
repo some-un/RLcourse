@@ -43,12 +43,9 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
 
-        # Write value iteration code here
-        "*** YOUR CODE HERE ***"
-
 
         for i in range(self.iterations):
-            previous_value = self.values.copy()
+            previous_values = self.values.copy()
             for state in self.mdp.getStates():
                 # Why None works and 0 doesn't ?!??!?!? After we compare a number (qvalue) with None...hmm
                 maxvalue_per_action = None
@@ -57,7 +54,7 @@ class ValueIterationAgent(ValueEstimationAgent):
                     state_prob_tuple = self.mdp.getTransitionStatesAndProbs(state, action)
                     for next_state, prob in state_prob_tuple:
                         qvalue += prob * (
-                            self.mdp.getReward(state, prob, next_state) + (self.discount * previous_value[next_state]))
+                            self.mdp.getReward(state, prob, next_state) + (self.discount * previous_values[next_state]))
                     if qvalue > maxvalue_per_action:
                         maxvalue_per_action = qvalue
                 self.values[state] = (maxvalue_per_action or 0)
