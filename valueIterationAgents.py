@@ -42,9 +42,35 @@ class ValueIterationAgent(ValueEstimationAgent):
         self.discount = discount
         self.iterations = iterations
         self.values = util.Counter() # A Counter is a dict with default 0
-
-
-        for i in range(self.iterations):
+        #
+        # Thanks to dictionary's default 0, we've value function initialization done right there
+        #
+#         for _ in xrange(iterations):
+#             # we wouldn't use the iterator variable anyway and we can't do, e.g., # its=iterations # while its-- > 0 # :(
+#             lastItVals = self.values.copy()
+#             #
+#             for s in self.mdp.getStates():
+#                 #
+#                 qvaluesForCurrentStateActions = util.Counter()
+#                 #
+#                 for a in self.mdp.getPossibleActions(s):
+#                     tempqv = self.computeQValueFrom_previousIterationValues(s, a, lastItVals)
+#                     if tempqv == None:
+#                         qvaluesForCurrentStateActions[a] = 0
+#                     else:
+#                         qvaluesForCurrentStateActions[a] = tempqv 
+#                 #
+#                 print "unsorted: ", qvaluesForCurrentStateActions
+#                 qvaluesForCurrentStateActions.sortedKeys()
+#                 print "qvaluesForCurrentStateActions argMax: ", qvaluesForCurrentStateActions.argMax()
+#                 if qvaluesForCurrentStateActions.argMax() == None:
+#                     self.values[s] = 0
+#                 else:
+#                     
+#                 self.values[s] = qvaluesForCurrentStateActions.argMax()
+            
+ 
+        for uselessIterator in range(self.iterations):
             previous_values = self.values.copy()
             for state in self.mdp.getStates():
                 # Why None works and 0 doesn't ?!??!?!? After we compare a number (qvalue) with None...hmm
@@ -59,9 +85,6 @@ class ValueIterationAgent(ValueEstimationAgent):
                         maxvalue_per_action = qvalue
                 self.values[state] = (maxvalue_per_action or 0)
 
-
-
-
     def getValue(self, state):
         """
           Return the value of the state (computed in __init__).
@@ -74,33 +97,43 @@ class ValueIterationAgent(ValueEstimationAgent):
           Compute the Q-value of action in state from the
           value function stored in self.values.
         """
-        "*** YOUR CODE HERE ***"
-
-        # Retrieve all states (with the probabilities) that we can end up in after taking tha action
-        state_prob_pairs = self.mdp.getTransitionStatesAndProbs(state, action)
         #
+        weightedVfvsSum = 0
+        reward = 0
+        # to get possible next state(s)
+        for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+            reward += self.mdp.getReward(state, action, nextState) * prob
+            #print ":computeQValueFromValues: nextState is: ", nextState, " | self.values[nextState] is: ", self.values[nextState]
+            weightedVfvsSum += prob * self.getValue(nextState)
+        #
+        return ( reward + ( self.discount * weightedVfvsSum) ) # making the actual qvalue
+    
+    def computeQValueFrom_previousIterationValues(self, state, action, previousIterationValues):
+        """
+          Compute the Q-value of action in state from the
+          value function stored in self.values.
+        """
+        #
+        weightedVfvsSum = 0
+        reward = 0
+        # to get possible next state(s)
+        for nextState, prob in self.mdp.getTransitionStatesAndProbs(state, action):
+            reward += self.mdp.getReward(state, action, nextState) * prob
+            print ":computeQValueFrom_previousIterationValues: nextState is: ", nextState, " | self.values[nextState] is: ", previousIterationValues[nextState]
+            weightedVfvsSum += prob * previousIterationValues[nextState]
+        #
+        return ( reward + ( self.discount * weightedVfvsSum) ) # making the actual qvalue
 
-        sum_states_prob = 0
-        sum_rewards = 0
-        for state_prob_pair in state_prob_pairs:
-            s = state_prob_pair[0]
-            p = state_prob_pair[1]
 
-            if self.getValue(s) is not None:
-
-                value_s = self.getValue(s)
-
-                sum_states_prob += (p * value_s)
-                immediate_reward = self.mdp.getReward(state, action, s)
-                sum_rewards += p * immediate_reward
-
-        discounted_sum = sum_states_prob * self.discount
-
-        final_value = sum_rewards + discounted_sum
-
-        return final_value
-
-
+            # above crashes the system, is then this hack enough? ;) Seems to be, at least for this game
+            #if self.values[nextState] == None or self.values[nextState] == 'exit': self.values[nextState] = 0 # nah, can be also west, ..., any string etc.
+            # let's go for the following then:
+            #if not isinstance(self.values[nextState], float): self.values[nextState] = 0
+            
+            #if not isinstance(self.values[nextState], float):
+            #if (self.mdp.isTerminal(nextState)):
+                #self.values[nextState] = 0
+                #continue #as the "next", exit state value should be 0, resulting in the same for this weightedVfvsSum increment
 
     def computeActionFromValues(self, state):
         """
@@ -111,21 +144,16 @@ class ValueIterationAgent(ValueEstimationAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return None.
         """
-        "*** YOUR CODE HERE ***"
         #
-        #  initial implementation
+        if (self.mdp.isTerminal(state)): return None
         #
-        if (self.mdp.isTerminal(state)):
-            return None
-        possibleActionsList = self.mdp.getPossibleActions(state)
-        max_value = None
-        best_action = None
-        for a in possibleActionsList:
-            current_value = self.computeQValueFromValues(state,a)
-            if current_value > max_value:
-                max_value, best_action = current_value, a
-        return best_action
-
+        ExpectedValuesOfActions = util.Counter()
+        #
+        for a in self.mdp.getPossibleActions(state):
+            ExpectedValuesOfActions[a] = self.computeQValueFromValues(state, a)
+        #
+        ExpectedValuesOfActions.sortedKeys()
+        return ExpectedValuesOfActions.argMax()
 
     def getPolicy(self, state):
         return self.computeActionFromValues(state)
