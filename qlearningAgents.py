@@ -41,8 +41,12 @@ class QLearningAgent(ReinforcementAgent):
     def __init__(self, **args):
         "You can initialize Q-values here..."
         ReinforcementAgent.__init__(self, **args)
-
-        "*** YOUR CODE HERE ***"
+        #
+        self.qvalues = util.Counter() #qv[(s,a)] = 1
+        self.transprobs = util.Counter()
+        self.visitsToTheState = util.Counter()
+        self.numberOfStatesVisited = 0
+        # set default vlaue for this dictionary as -1, or not ('one' in d.values())
 
     def getQValue(self, state, action):
         """
@@ -101,8 +105,15 @@ class QLearningAgent(ReinforcementAgent):
           NOTE: You should never call this function,
           it will be called on your behalf
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        # Increase the number of experience steps taken by the agent
+        self.numberOfStatesVisited = self.numberOfStatesVisited + 1
+        self.visitsToTheState[nextState] = self.visitsToTheState + 1
+        # What we need: reward (OK),
+        # prob of transition to next state
+        legalActionsForS1 = state.getLegalActions()
+        for a in legalActionsForS1:
+            self.transprobs[(state,action,nextState)] = self.visitsToTheState[nextState]/self.numberOfStatesVisited
+        self.qvalues[(state,action)] = reward + 1 * self.transprobs[(state,action,nextState)] * self.computeValueFromQValues(nextState)
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
