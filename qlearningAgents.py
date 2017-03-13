@@ -114,6 +114,11 @@ class QLearningAgent(ReinforcementAgent):
         for a in legalActionsForS1:
             self.transprobs[(state,action,nextState)] = self.visitsToTheState[nextState]/self.numberOfStatesVisited
         self.qvalues[(state,action)] = reward + 1 * self.transprobs[(state,action,nextState)] * self.computeValueFromQValues(nextState)
+        #
+        # Make sure we agree that we don't assign different probabilities
+        # to reaching a state to different actions associated with the
+        # transition to this state (i.e. should we keep separate probability
+        # values for different actions which led us to this state from previous?) 
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
