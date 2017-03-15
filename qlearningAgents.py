@@ -44,7 +44,7 @@ class QLearningAgent(ReinforcementAgent):
         #
         self.qvalues = util.Counter() #qv[(s,a)] = 1
         self.transprobs = util.Counter()
-        self.visitsToTheState = util.Counter()
+        self.visitsToTheStateGivenAction = util.Counter()
         self.numberOfStatesVisited = 0
         # set default vlaue for this dictionary as -1, or not ('one' in d.values())
 
@@ -54,8 +54,7 @@ class QLearningAgent(ReinforcementAgent):
           Should return 0.0 if we have never seen a state
           or the Q node value otherwise
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        return self.qvalues[(state,action)]
 
 
     def computeValueFromQValues(self, state):
@@ -65,8 +64,17 @@ class QLearningAgent(ReinforcementAgent):
           there are no legal actions, which is the case at the
           terminal state, you should return a value of 0.0.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalActions = self.getLegalActions(state)
+        if len(legalActions) == 0:
+            return 0.0
+        qvaluesForS = util.Counter()
+        for a in legalActions:
+            qvaluesForS[a] = self.getQValue(state,a)
+        qvaluesForS.sortedKeys()
+        bestAction = qvaluesForS.argMax()
+        #print bestAction
+        #return qvaluesForS[qvaluesForS.argMax()]
+        return bestAction
 
     def computeActionFromQValues(self, state):
         """
@@ -74,8 +82,25 @@ class QLearningAgent(ReinforcementAgent):
           are no legal actions, which is the case at the terminal state,
           you should return None.
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        legalActions = self.getLegalActions(state)
+        if len(legalActions) == 0:
+            return None
+        qvaluesForS = util.Counter()
+        for a in legalActions:
+            qvaluesForS[a] = self.getQValue(state,a)
+        sortedQvalues = qvaluesForS.sortedKeys()
+        bestQvalueFirstKey = sortedQvalues[0]
+        bestQvalue = qvaluesForS[bestQvalueFirstKey]
+        bestQvalueActionsList = []
+        bestActionToTakeFromS = bestQvalueFirstKey
+        bestQvalueActionsList.append(bestQvalueFirstKey)
+        for a in legalActions:
+            if qvaluesForS[a] == bestQvalue and a != bestQvalueFirstKey:
+                bestQvalueActionsList.append(a)
+        if len(bestQvalueActionsList) > 1:
+            # we've a tie here, sir!
+            bestActionToTakeFromS = random.choice(bestQvalueActionsList)
+        return bestActionToTakeFromS
 
     def getAction(self, state):
         """
@@ -90,11 +115,12 @@ class QLearningAgent(ReinforcementAgent):
         """
         # Pick Action
         legalActions = self.getLegalActions(state)
-        action = None
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
-        return action
+        if len(legalActions) == 0:
+            return None
+        if util.flipCoin(self.epsilon):
+            return random.choice(legalActions)
+        # implicit else here, of course
+        return self.computeActionFromQValues(state)
 
     def update(self, state, action, nextState, reward):
         """
@@ -107,12 +133,16 @@ class QLearningAgent(ReinforcementAgent):
         """
         # Increase the number of experience steps taken by the agent
         self.numberOfStatesVisited = self.numberOfStatesVisited + 1
-        self.visitsToTheState[nextState] = self.visitsToTheState + 1
+        self.visitsToTheStateGivenAction[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,action,nextState)] + 1
         # What we need: reward (OK),
         # prob of transition to next state
-        legalActionsForS1 = state.getLegalActions()
+        legalActionsForS1 = self.getLegalActions(state)
         for a in legalActionsForS1:
-            self.transprobs[(state,action,nextState)] = self.visitsToTheState[nextState]/self.numberOfStatesVisited
+            #self.transprobs[(state,action,nextState)] = self.visitsToTheState[nextState]/self.numberOfStatesVisited
+            totalNumberOfVisitsToS2FromS1 = 0
+            for ac in legalActionsForS1:
+                totalNumberOfVisitsToS2FromS1 = totalNumberOfVisitsToS2FromS1 + self.visitsToTheStateGivenAction[(state,ac,nextState)]
+            self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         self.qvalues[(state,action)] = reward + 1 * self.transprobs[(state,action,nextState)] * self.computeValueFromQValues(nextState)
         #
         # Make sure we agree that we don't assign different probabilities

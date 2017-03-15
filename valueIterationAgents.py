@@ -66,8 +66,7 @@ class ValueIterationAgent(ValueEstimationAgent):
 #                 if qvaluesForCurrentStateActions.argMax() == None:
 #                     self.values[s] = 0
 #                 else:
-#                     
-#                 self.values[s] = qvaluesForCurrentStateActions.argMax()
+#                      self.values[s] = qvaluesForCurrentStateActions.argMax()
             
  
         for uselessIterator in range(self.iterations):
