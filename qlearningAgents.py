@@ -71,10 +71,7 @@ class QLearningAgent(ReinforcementAgent):
         for a in legalActions:
             qvaluesForS[a] = self.getQValue(state,a)
         qvaluesForS.sortedKeys()
-        bestAction = qvaluesForS.argMax()
-        #print bestAction
-        #return qvaluesForS[qvaluesForS.argMax()]
-        return bestAction
+        return qvaluesForS[qvaluesForS.argMax()]
 
     def computeActionFromQValues(self, state):
         """
@@ -143,12 +140,9 @@ class QLearningAgent(ReinforcementAgent):
             for ac in legalActionsForS1:
                 totalNumberOfVisitsToS2FromS1 = totalNumberOfVisitsToS2FromS1 + self.visitsToTheStateGivenAction[(state,ac,nextState)]
             self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
-        self.qvalues[(state,action)] = reward + 1 * self.transprobs[(state,action,nextState)] * self.computeValueFromQValues(nextState)
-        #
-        # Make sure we agree that we don't assign different probabilities
-        # to reaching a state to different actions associated with the
-        # transition to this state (i.e. should we keep separate probability
-        # values for different actions which led us to this state from previous?) 
+        bestActionForTheNextState = self.computeActionFromQValues(nextState)
+        delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
+        self.qvalues[(state,action)] = (self.qvalues[(state,action)]) + (self.alpha * delta)
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
