@@ -47,6 +47,8 @@ class QLearningAgent(ReinforcementAgent):
         self.visitsToTheStateGivenAction = util.Counter()
         self.numberOfStatesVisited = 0
         # set default vlaue for this dictionary as -1, or not ('one' in d.values())
+        self.EligTrVal = util.Counter()
+        self.lambdaVal = 0.5
 
     def getQValue(self, state, action):
         """
@@ -149,8 +151,30 @@ class QLearningAgent(ReinforcementAgent):
             nextStateQval = self.getQValue(nextState, bestActionForTheNextState)
         delta = reward + (self.discount * nextStateQval) - self.getQValue(state, action)
         #
+        self.EligTrVal[(state,action)] += 1
+        # if the next state is a terminal one
+        if len(self.getLegalActions(nextState)) == 0:
+            # reset the eligibility trace
+            self.EligTrVal[(state,action)] = 0
+        #
+        for qvalue_key_tuple in self.qvalues:
+            sPrime = qvalue_key_tuple[0]
+            aPrime = qvalue_key_tuple[1]
+            self.qvalues[(sPrime, aPrime)] += self.alpha * delta * self.EligTrVal[(sPrime, aPrime)]
+            self.EligTrVal[(sPrime,aPrime)] *= self.discount * self.lambdaVal
+        #
+        '''
+        sPrime = nextState
+        #
+        allLegalActionsForSPrime = self.getLegalActions(sPrime)
+        #
+        for aPrime in allLegalActionsForSPrime:
+            self.qvalues[(sPrime,aPrime)] += self.alpha * delta * self.EligTrVal[(sPrime,aPrime)]
+            self.EligTrVal[(sPrime,aPrime)] *= self.discount * self.lambdaVal
+        #
+        '''
         #delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
-        self.qvalues[(state,action)] = self.getQValue(state, action) + (self.alpha * delta)
+        #self.qvalues[(state,action)] = self.getQValue(state, action) + (self.alpha * delta)
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
