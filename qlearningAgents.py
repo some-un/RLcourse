@@ -142,7 +142,8 @@ class QLearningAgent(ReinforcementAgent):
             self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         bestActionForTheNextState = self.computeActionFromQValues(nextState)
         delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
-        self.qvalues[(state,action)] = (self.qvalues[(state,action)]) + (self.alpha * delta)
+        #self.qvalues[(state,action)] = (self.qvalues[(state,action)]) + (self.alpha * delta)
+        self.qvalues[(state,action)] = self.getQValue(state, action) + (self.alpha * delta)
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -204,15 +205,35 @@ class ApproximateQAgent(PacmanQAgent):
           Should return Q(state,action) = w * featureVector
           where * is the dotProduct operator
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        featuresDict = self.featExtractor.getFeatures(state,action)
+        #
+        qApproxValue = 0
+        for key_f in featuresDict:
+            qApproxValue += self.weights[(state,action,key_f)] * featuresDict[key_f]
+        return qApproxValue
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
-        "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        """
+        self.numberOfStatesVisited += + 1
+        self.visitsToTheStateGivenAction[(state,action,nextState)] += 1
+        legalActionsForS1 = self.getLegalActions(state)
+        for a in legalActionsForS1:
+            totalNumberOfVisitsToS2FromS1 = 0
+            for ac in legalActionsForS1:
+                totalNumberOfVisitsToS2FromS1 +=  self.visitsToTheStateGivenAction[(state,ac,nextState)]
+            self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
+        #
+        """
+        #bestActionForTheNextState = self.computeActionFromQValues(nextState)
+        #delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
+        delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
+        #
+        featuresDict = self.featExtractor.getFeatures(state,action)
+        for key_f in featuresDict:
+            self.weights[(state,action,key_f)] += self.alpha * delta * featuresDict[key_f]
 
     def final(self, state):
         "Called at the end of each game."
@@ -222,5 +243,5 @@ class ApproximateQAgent(PacmanQAgent):
         # did we finish training?
         if self.episodesSoFar == self.numTraining:
             # you might want to print your weights here for debugging
-            "*** YOUR CODE HERE ***"
+            print self.weights
             pass
