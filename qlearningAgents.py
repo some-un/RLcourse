@@ -141,8 +141,15 @@ class QLearningAgent(ReinforcementAgent):
                 totalNumberOfVisitsToS2FromS1 = totalNumberOfVisitsToS2FromS1 + self.visitsToTheStateGivenAction[(state,ac,nextState)]
             self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         bestActionForTheNextState = self.computeActionFromQValues(nextState)
-        delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
-        #self.qvalues[(state,action)] = (self.qvalues[(state,action)]) + (self.alpha * delta)
+        #
+        nextStateQval = None
+        if bestActionForTheNextState is None:
+            nextStateQval = 0
+        else:
+            nextStateQval = self.getQValue(nextState, bestActionForTheNextState)
+        delta = reward + (self.discount * nextStateQval) - self.getQValue(state, action)
+        #
+        #delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
         self.qvalues[(state,action)] = self.getQValue(state, action) + (self.alpha * delta)
 
     def getPolicy(self, state):
@@ -227,6 +234,7 @@ class ApproximateQAgent(PacmanQAgent):
             self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         #
         """
+        '''
         bestActionForTheNextState = self.computeActionFromQValues(nextState)
         nextStateQval = None
         if bestActionForTheNextState is None:
@@ -234,7 +242,8 @@ class ApproximateQAgent(PacmanQAgent):
         else:
             nextStateQval = self.getQValue(nextState, bestActionForTheNextState)
         delta = reward + (self.discount * nextStateQval) - self.getQValue(state, action)
-        #delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
+        '''
+        delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
         #
         featuresDict = self.featExtractor.getFeatures(state,action)
         for key_f in featuresDict:
