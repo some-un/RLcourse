@@ -227,9 +227,14 @@ class ApproximateQAgent(PacmanQAgent):
             self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         #
         """
-        #bestActionForTheNextState = self.computeActionFromQValues(nextState)
-        #delta = reward + (self.discount * self.getQValue(nextState, bestActionForTheNextState)) - self.getQValue(state, action)
-        delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
+        bestActionForTheNextState = self.computeActionFromQValues(nextState)
+        nextStateQval = None
+        if bestActionForTheNextState is None:
+            nextStateQval = 0
+        else:
+            nextStateQval = self.getQValue(nextState, bestActionForTheNextState)
+        delta = reward + (self.discount * nextStateQval) - self.getQValue(state, action)
+        #delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
         #
         featuresDict = self.featExtractor.getFeatures(state,action)
         for key_f in featuresDict:
