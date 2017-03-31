@@ -240,7 +240,9 @@ class ApproximateQAgent(PacmanQAgent):
         #
         qApproxValue = 0
         for key_f in featuresDict:
-            qApproxValue += self.weights[(state,action,key_f)] * featuresDict[key_f]
+            # if we keep weights per (state and action), we don't actually approximate reducing the representation of the problem, it's still too fine grained 
+            #qApproxValue += self.weights[(state,action,key_f)] * featuresDict[key_f]
+            qApproxValue += self.weights[key_f] * featuresDict[key_f]
         return qApproxValue
 
     def update(self, state, action, nextState, reward):
@@ -271,7 +273,9 @@ class ApproximateQAgent(PacmanQAgent):
         #
         featuresDict = self.featExtractor.getFeatures(state,action)
         for key_f in featuresDict:
-            self.weights[(state,action,key_f)] += self.alpha * delta * featuresDict[key_f]
+            #self.weights[(state,action,key_f)] += self.alpha * delta * featuresDict[key_f]
+            self.weights[key_f] += self.alpha * delta * featuresDict[key_f]
+        # cornered case issue for question 4, HA3
 
     def final(self, state):
         "Called at the end of each game."
