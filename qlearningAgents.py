@@ -270,7 +270,28 @@ class ApproximateQAgent(PacmanQAgent):
         if reward != -1:
             for f in featuresDictS1:
                 self.EligTrVal[f] = 0
-        delta = reward + self.discount * nextStateQval - qvalue
+        #
+        # TEST, task 4, HA4
+        #
+        bestActionForTheCurrentState = self.computeActionFromQValues(state)
+        #
+        # overwriting the nextStateQval with proposed modification
+        featuresDictTest = self.featExtractor.getFeatures(nextState,action)
+        nextStateQval = 0 # WHY would we do it here since it won't take any effect? Where should it actually be changed?
+        for f in featuresDictTest:
+            nextStateQval += self.weights[f] * featuresDictTest[f]
+        #
+        testNextStateQvalue = 0
+        if bestActionForTheCurrentState is not None:
+            testNextStateQvalue = self.getQValue(nextState, action)
+        #
+        delta = reward + self.discount * testNextStateQvalue - self.getQValue(state, action)
+        #
+        
+        #
+        # end of TEST, task 4, HA4
+        #
+        #delta = reward + self.discount * nextStateQval - qvalue
         #
         for f in featuresDictS1:
             self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictS1[f]
