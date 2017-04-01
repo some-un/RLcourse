@@ -44,9 +44,6 @@ class QLearningAgent(ReinforcementAgent):
         #
         self.qvalues = util.Counter() #qv[(s,a)] = 1
         self.transprobs = util.Counter()
-        self.visitsToTheStateGivenAction = util.Counter()
-        self.numberOfStatesVisited = 0
-        # set default vlaue for this dictionary as -1, or not ('one' in d.values())
         self.EligTrVal = util.Counter()
         self.lambdaVal = 0.5
 
@@ -130,18 +127,6 @@ class QLearningAgent(ReinforcementAgent):
           NOTE: You should never call this function,
           it will be called on your behalf
         """
-        # Increase the number of experience steps taken by the agent
-        self.numberOfStatesVisited = self.numberOfStatesVisited + 1
-        self.visitsToTheStateGivenAction[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,action,nextState)] + 1
-        # What we need: reward (OK),
-        # prob of transition to next state
-        legalActionsForS1 = self.getLegalActions(state)
-        for a in legalActionsForS1:
-            #self.transprobs[(state,action,nextState)] = self.visitsToTheState[nextState]/self.numberOfStatesVisited
-            totalNumberOfVisitsToS2FromS1 = 0
-            for ac in legalActionsForS1:
-                totalNumberOfVisitsToS2FromS1 = totalNumberOfVisitsToS2FromS1 + self.visitsToTheStateGivenAction[(state,ac,nextState)]
-            self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         bestActionForTheNextState = self.computeActionFromQValues(nextState)
         #
         nextStateQval = None
@@ -157,9 +142,7 @@ class QLearningAgent(ReinforcementAgent):
             # reset the eligibility trace
             self.EligTrVal[(state,action)] = 0
         #
-        for qvalue_key_tuple in self.qvalues:
-            sPrime = qvalue_key_tuple[0]
-            aPrime = qvalue_key_tuple[1]
+        for sPrime, aPrime in self.qvalues:
             self.qvalues[(sPrime, aPrime)] += self.alpha * delta * self.EligTrVal[(sPrime, aPrime)]
             self.EligTrVal[(sPrime,aPrime)] *= self.discount * self.lambdaVal
         #
@@ -249,18 +232,9 @@ class ApproximateQAgent(PacmanQAgent):
         """
            Should update your weights based on transition
         """
-        """
-        self.numberOfStatesVisited += + 1
-        self.visitsToTheStateGivenAction[(state,action,nextState)] += 1
-        legalActionsForS1 = self.getLegalActions(state)
-        for a in legalActionsForS1:
-            totalNumberOfVisitsToS2FromS1 = 0
-            for ac in legalActionsForS1:
-                totalNumberOfVisitsToS2FromS1 +=  self.visitsToTheStateGivenAction[(state,ac,nextState)]
-            self.transprobs[(state,action,nextState)] = self.visitsToTheStateGivenAction[(state,a,nextState)] / totalNumberOfVisitsToS2FromS1
         #
-        """
         '''
+        # Approximate Q-learning code below
         bestActionForTheNextState = self.computeActionFromQValues(nextState)
         nextStateQval = None
         if bestActionForTheNextState is None:
@@ -268,14 +242,39 @@ class ApproximateQAgent(PacmanQAgent):
         else:
             nextStateQval = self.getQValue(nextState, bestActionForTheNextState)
         delta = reward + (self.discount * nextStateQval) - self.getQValue(state, action)
-        '''
-        delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
+        #
+        #delta = reward + (self.discount * self.computeValueFromQValues(nextState)) - self.getQValue(state, action)
         #
         featuresDict = self.featExtractor.getFeatures(state,action)
         for key_f in featuresDict:
             #self.weights[(state,action,key_f)] += self.alpha * delta * featuresDict[key_f]
             self.weights[key_f] += self.alpha * delta * featuresDict[key_f]
         # cornered case issue for question 4, HA3
+        '''
+        # Approximate TD-learning code below
+        qvalue = 0
+        nextStateQval = 0
+        featuresDictS1 = self.featExtractor.getFeatures(state,action)
+        for f in featuresDictS1:
+            qvalue += self.weights[f] * featuresDictS1[f]
+        #
+        bestActionForTheNextState = self.computeActionFromQValues(nextState)
+        if bestActionForTheNextState == None:
+            nextStateQval = 0.0
+        else:
+            #bestActionForTheNextState is equal to None, Terminal state
+            featuresDictS2 = self.featExtractor.getFeatures(nextState,bestActionForTheNextState)
+            for f in featuresDictS2:
+                nextStateQval += self.weights[f] * featuresDictS2[f]
+        #
+        if reward != -1:
+            for f in featuresDictS1:
+                self.EligTrVal[f] = 0
+        delta = reward + self.discount * nextStateQval - qvalue
+        #
+        for f in featuresDictS1:
+            self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictS1[f]
+            self.weights[f] += self.alpha * delta * self.EligTrVal[f]
 
     def final(self, state):
         "Called at the end of each game."
