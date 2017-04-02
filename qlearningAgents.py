@@ -252,6 +252,7 @@ class ApproximateQAgent(PacmanQAgent):
         # cornered case issue for question 4, HA3
         '''
         # Approximate TD-learning code below
+        '''
         qvalue = 0
         nextStateQval = 0
         featuresDictS1 = self.featExtractor.getFeatures(state,action)
@@ -271,31 +272,31 @@ class ApproximateQAgent(PacmanQAgent):
             for f in featuresDictS1:
                 self.EligTrVal[f] = 0
         #
-        # TEST, task 4, HA4
-        #
-        bestActionForTheCurrentState = self.computeActionFromQValues(state)
-        #
-        # overwriting the nextStateQval with proposed modification
-        featuresDictTest = self.featExtractor.getFeatures(nextState,action)
-        nextStateQval = 0 # WHY would we do it here since it won't take any effect? Where should it actually be changed?
-        for f in featuresDictTest:
-            nextStateQval += self.weights[f] * featuresDictTest[f]
-        #
-        testNextStateQvalue = 0
-        if bestActionForTheCurrentState is not None:
-            testNextStateQvalue = self.getQValue(nextState, action)
-        #
-        delta = reward + self.discount * testNextStateQvalue - self.getQValue(state, action)
-        #
-        
-        #
-        # end of TEST, task 4, HA4
-        #
-        #delta = reward + self.discount * nextStateQval - qvalue
-        #
         for f in featuresDictS1:
             self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictS1[f]
             self.weights[f] += self.alpha * delta * self.EligTrVal[f]
+        #
+        '''
+        #
+        # task 4, HA4: modified approx Q-learning
+        #
+        bestActionForTheNextState = self.computeActionFromQValues(nextState)
+        nextStateQval = None
+        if bestActionForTheNextState is None:
+            nextStateQval = 0
+        else:
+            nextStateQval = self.getQValue(nextState, bestActionForTheNextState)
+        delta = reward + (self.discount * nextStateQval) - self.getQValue(state, action)
+        #
+        if bestActionForTheNextState is None:
+            featuresDictTest = self.featExtractor.getFeatures(state,action)
+            for f in featuresDictTest:
+                self.EligTrVal[f] = 0
+        else:
+            featuresDictTest = self.featExtractor.getFeatures(nextState,bestActionForTheNextState)
+            for f in featuresDictTest:
+                self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictTest[f]
+                self.weights[f] += self.alpha * delta * self.EligTrVal[f]
 
     def final(self, state):
         "Called at the end of each game."
