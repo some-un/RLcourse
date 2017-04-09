@@ -45,7 +45,31 @@ class QLearningAgent(ReinforcementAgent):
         self.qvalues = util.Counter() #qv[(s,a)] = 1
         self.transprobs = util.Counter()
         self.EligTrVal = util.Counter()
-        self.lambdaVal = 0.5
+        self.lambdaVal = 1
+        #
+        # Tests on mediumClassic grid:
+        #
+        # for lambda = 0.5, approx TD agent wins it all usually, doesn't get closer than 2 steps (1 blank field in between) to the ghost
+        # for lambda = 0, no visible change in behavior or performance compared to lambda = 0.5 case
+        # for lambda = 0.25, again no difference compared to lambda equal to 0 & 0.5
+        # for lambda = 0.75, again no difference compared to lambda equal to 0, 0.5 & 0.75
+        #
+        # Tests on mediumGrid:
+        #
+        # lambda = 0.5, 60% and 100% wins
+        # lambda = 0.0, 100% winning rate (2 rials, 10 test games each)
+        # lambda = 0.25, win rate dropped to 40% and 80% | After 3 more trials (in a row), 100% avg winning rate
+        # lambda = 0.75, good performance, 100% win (ok, 1 trial performed but still) | After 3 more trials (in a row), 100% avg winning rate too
+        #                                                                               (ghost simply wasn't where food was during those trials)
+        # Observation: TD-agents seems to fall prey of the ghost when the ghost's located exactly when the food is
+        #              clearly proving here what we knew already: that it's primary driving force is hunger and then,
+        #              only in case of emergency, it avoids getting eaten itself by the ghost. Does lambda control
+        #              this choice by weighting the hunger vs. danger? How exactly does it work?
+        #
+        # For what I've seen in terms of Pacman behavior when lambda set to 0, it seems to be more blind to the danger (ghost)
+        # with lamdba equal to 1 than 0.25 or 0.5 (however, not enough statistical data on it)
+        # Basically the Pacman tries to get all the food as soon as possible if only not in the immediate vicinity of a ghost
+        #
 
     def getQValue(self, state, action):
         """
@@ -252,7 +276,7 @@ class ApproximateQAgent(PacmanQAgent):
         # cornered case issue for question 4, HA3
         '''
         # Approximate TD-learning code below
-        '''
+        
         qvalue = 0
         nextStateQval = 0
         featuresDictS1 = self.featExtractor.getFeatures(state,action)
@@ -271,15 +295,17 @@ class ApproximateQAgent(PacmanQAgent):
         if reward != -1:
             for f in featuresDictS1:
                 self.EligTrVal[f] = 0
+        else:
+            delta = reward + (self.discount * nextStateQval) - qvalue
+            for f in featuresDictS1:
+                self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictS1[f]
+                self.weights[f] += self.alpha * delta * self.EligTrVal[f]
         #
-        for f in featuresDictS1:
-            self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictS1[f]
-            self.weights[f] += self.alpha * delta * self.EligTrVal[f]
-        #
-        '''
+        
         #
         # task 4, HA4: modified approx Q-learning
         #
+        '''
         bestActionForTheNextState = self.computeActionFromQValues(nextState)
         nextStateQval = None
         if bestActionForTheNextState is None:
@@ -297,6 +323,7 @@ class ApproximateQAgent(PacmanQAgent):
             for f in featuresDictTest:
                 self.EligTrVal[f] = self.lambdaVal * self.EligTrVal[f] + featuresDictTest[f]
                 self.weights[f] += self.alpha * delta * self.EligTrVal[f]
+        '''
 
     def final(self, state):
         "Called at the end of each game."
